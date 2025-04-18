@@ -1,8 +1,13 @@
-using RubiksCube.Domain.Enums;
+using RubiksCube.Domain.Common;
+using RubiksCube.Domain.DTOs;
 
 namespace RubiksCube.Application.Services;
 
 public interface ICubeService
 {
-    void Rotate(Face face, bool clockwise);
+    Result Rotate(RotateRequest request);
+
+    Result<CubeStateDto> GetState();
+
+    Result Reset();
 }

@@ -6,23 +6,35 @@ namespace RubiksCube.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class CubeController(ICubeService cubeService)
+public class CubeController(ICubeService cubeService) : ControllerBase
 {
-    [HttpGet("state")]
-    public async Task GetState()
-    { 
-        
-    }
+    private readonly ICubeService _cubeService = cubeService;
     
+    [HttpGet("state")]
+    public IActionResult GetState()
+    {
+        var result = _cubeService.GetState();
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : BadRequest(result.Error);
+    }
+
     [HttpPatch("rotate")]
-    public async Task RotateFace([FromBody] RotateRequest request)
+    public IActionResult RotateFace([FromBody] RotateRequest request)
     { 
-        
+        var result = _cubeService.Rotate(request);
+        return result.IsSuccess
+            ? NoContent()
+            : BadRequest(result.Error);
     }
 
     [HttpPatch("reset")]
-    public async Task Reset()
+    public IActionResult Reset()
     {
-        
+        var result = _cubeService.Reset();
+        return result.IsSuccess
+            ? NoContent()
+            : BadRequest(result.Error);
     }
+
 }

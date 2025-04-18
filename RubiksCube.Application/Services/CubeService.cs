@@ -1,109 +1,138 @@
 using System.Collections.Immutable;
+using RubiksCube.Domain.Common;
+using RubiksCube.Domain.DTOs;
 using RubiksCube.Domain.Enums;
 using RubiksCube.Domain.Models;
 
 namespace RubiksCube.Application.Services;
 
-public class CubeService(Cube cube) : ICubeService
+public class CubeService : ICubeService
 {
-    private readonly Cube _cube = cube;
-    
-    // We don't include the center part of each face because it doesn't influence the edges when rotating 
-    private static readonly ImmutableDictionary<Face, (int, int)[]> EdgeMappings = new Dictionary<Face, (int, int)[]>
-    {
-        { Face.Front, [(0, 0), (0, 1), (0, 2), (1, 0), (2, 0), (2, 1), (2, 2), (1, 2)] },
-        { Face.Up, [(0, 0), (0, 1), (0, 2), (1, 0), (2, 0), (2, 1), (2, 2), (1, 2)] },
-        { Face.Down, [(2, 0), (2, 1), (2, 2), (1, 2), (0, 2), (0, 1), (0, 0), (1, 0)] },
-        { Face.Left, [(0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (0, 1), (0, 2)] },
-        { Face.Right, [(0, 2), (1, 2), (2, 2), (2, 1), (2, 0), (0, 1), (0, 0)] },
-        { Face.Back, [(0, 2), (0, 1), (0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (1, 2)] }
-    }.ToImmutableDictionary();
+    private readonly Cube _cube = new();
 
-    public void Rotate(Face face, bool clockwise)
+    private static readonly ImmutableDictionary<Face, (Face face, Func<int, (int x, int y)> getPos)[]> AdjacentEdges =
+        new Dictionary<Face, (Face, Func<int, (int, int)>)[]>
+        {
+            [Face.Front] =
+            [
+                (Face.Up, i => (2, i)),
+                (Face.Right, i => (i, 0)),
+                (Face.Down, i => (0, 2 - i)),
+                (Face.Left, i => (2 - i, 2))
+            ],
+            [Face.Back] =
+            [
+                (Face.Up, i => (0, 2 - i)),
+                (Face.Left, i => (i, 0)),
+                (Face.Down, i => (2, i)),
+                (Face.Right, i => (2 - i, 2))
+            ],
+            [Face.Up] =
+            [
+                (Face.Back, i => (0, 2 - i)),
+                (Face.Right, i => (0, 2 - i)),
+                (Face.Front, i => (0, i)),
+                (Face.Left, i => (0, i))
+            ],
+            [Face.Down] =
+            [
+                (Face.Front, i => (2, i)),
+                (Face.Right, i => (2, i)),
+                (Face.Back, i => (2, 2 - i)),
+                (Face.Left, i => (2, 2 - i))
+            ],
+            [Face.Left] =
+            [
+                (Face.Up, i => (i, 0)),
+                (Face.Front, i => (i, 0)),
+                (Face.Down, i => (i, 0)),
+                (Face.Back, i => (2 - i, 2))
+            ],
+            [Face.Right] =
+            [
+                (Face.Up, i => (i, 2)),
+                (Face.Back, i => (2 - i, 0)),
+                (Face.Down, i => (i, 2)),
+                (Face.Front, i => (i, 2))
+            ]
+        }.ToImmutableDictionary();
+
+    public Result Rotate(RotateRequest request)
     {
-        RotateFaceMatrix(face, clockwise);
-        RotateEdges(face, clockwise);
+        RotateFaceMatrix(request.Face, request.Clockwise);
+        RotateEdges(request.Face, request.Clockwise);
+        
+        return Result.Success();
+    }
+
+    public Result<CubeStateDto> GetState()
+    {
+        return Result<CubeStateDto>.Success(new CubeStateDto());
+    }
+
+    public Result Reset()
+    {
+        return Result.Success();
     }
 
     private void RotateFaceMatrix(Face face, bool clockwise)
     {
-        var faceMatrix = GetFaceMatrix(face);
+        var size = _cube.Size;
+        var faceMatrix = _cube[face];
+        var rotated = new Color[size, size];
 
-        var rotated = new Color[3, 3];
-        for (var i = 0; i < 3; i++)
-        for (var j = 0; j < 3; j++)
-        {
-            rotated[i, j] = clockwise ? faceMatrix[2 - j, i] : faceMatrix[j, 2 - i];
-        }
+        for (var i = 0; i < size; i++)
+        for (var j = 0; j < size; j++)
+            rotated[i, j] = clockwise ? faceMatrix[size - j - 1, i] : faceMatrix[j, size - i - 1];
 
-        SetFaceMatrix(face, rotated);
-    }
-
-    private Color[,] GetFaceMatrix(Face face)
-    {
-        return face switch
-        {
-            Face.Up => _cube.Up,
-            Face.Down => _cube.Down,
-            Face.Left => _cube.Left,
-            Face.Right => _cube.Right,
-            Face.Front => _cube.Front,
-            Face.Back => _cube.Back,
-            _ => throw new ArgumentException("Invalid face")
-        };
-    }
-
-    private void SetFaceMatrix(Face face, Color[,] newMatrix)
-    {
-        switch (face)
-        {
-            case Face.Up:
-                _cube.Up = newMatrix;
-                break;
-            case Face.Down:
-                _cube.Down = newMatrix;
-                break;
-            case Face.Left:
-                _cube.Left = newMatrix;
-                break;
-            case Face.Right:
-                _cube.Right = newMatrix;
-                break;
-            case Face.Front:
-                _cube.Front = newMatrix;
-                break;
-            case Face.Back:
-                _cube.Back = newMatrix;
-                break;
-            default:
-                throw new ArgumentException("Invalid face");
-        }
+        for (var i = 0; i < size; i++)
+        for (var j = 0; j < size; j++)
+            _cube[face, i, j] = rotated[i, j];
     }
 
     private void RotateEdges(Face face, bool clockwise)
     {
-        // Get the edge positions for the face
-        var edgePositions = EdgeMappings[face];
-        var temp = new Color[edgePositions.Length];
+        var mappings = AdjacentEdges[face];
+        var size = _cube.Size;
+        var temp = new Color[size];
 
-        // Collect the edge colors into a temporary array
-        foreach (var (x, y) in edgePositions)
+        for (int i = 0; i < size; i++)
         {
-            
+            var (x, y) = mappings[0].getPos(i);
+            temp[i] = _cube[mappings[0].face, x, y];
         }
 
-        // Determine the adjacent faces and edges affected by the rotation
         if (clockwise)
         {
-            RotateClockwise(face);
+            for (int i = 0; i < mappings.Length - 1; i++)
+            for (int j = 0; j < size; j++)
+            {
+                var (srcX, srcY) = mappings[i + 1].getPos(j);
+                var (dstX, dstY) = mappings[i].getPos(j);
+                _cube[mappings[i].face, dstX, dstY] = _cube[mappings[i + 1].face, srcX, srcY];
+            }
+
+            for (int j = 0; j < size; j++)
+            {
+                var (dstX, dstY) = mappings[^1].getPos(j);
+                _cube[mappings[^1].face, dstX, dstY] = temp[j];
+            }
         }
         else
         {
-            RotateCounterClockwise(face);
+            for (int i = mappings.Length - 1; i > 0; i--)
+            for (int j = 0; j < size; j++)
+            {
+                var (srcX, srcY) = mappings[i - 1].getPos(j);
+                var (dstX, dstY) = mappings[i].getPos(j);
+                _cube[mappings[i].face, dstX, dstY] = _cube[mappings[i - 1].face, srcX, srcY];
+            }
+
+            for (int j = 0; j < size; j++)
+            {
+                var (dstX, dstY) = mappings[0].getPos(j);
+                _cube[mappings[0].face, dstX, dstY] = temp[j];
+            }
         }
     }
-    
-    private static void RotateClockwise(Face face) {}
-    
-    private static void RotateCounterClockwise(Face face) {}
 }
