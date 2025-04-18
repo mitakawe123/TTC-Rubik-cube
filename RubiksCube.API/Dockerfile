@@ -7,8 +7,12 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
 COPY ["RubiksCube.API/RubiksCube.API.csproj", "RubiksCube.API/"]
+COPY ["RubiksCube.Application/RubiksCube.Application.csproj", "RubiksCube.Application/"]
+COPY ["RubiksCube.Domain/RubiksCube.Domain.csproj", "RubiksCube.Domain/"]
 RUN dotnet restore "RubiksCube.API/RubiksCube.API.csproj"
+
 COPY . .
 WORKDIR "/src/RubiksCube.API"
 RUN dotnet build "./RubiksCube.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
