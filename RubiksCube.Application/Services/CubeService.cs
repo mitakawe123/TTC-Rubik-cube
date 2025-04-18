@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text;
 using RubiksCube.Domain.Common;
 using RubiksCube.Domain.DTOs;
 using RubiksCube.Domain.Enums;
@@ -6,9 +7,9 @@ using RubiksCube.Domain.Models;
 
 namespace RubiksCube.Application.Services;
 
-public class CubeService : ICubeService
+public class CubeService(Cube cube) : ICubeService
 {
-    private readonly Cube _cube = new();
+    private readonly Cube _cube = cube;
 
     private static readonly ImmutableDictionary<Face, (Face face, Func<int, (int x, int y)> getPos)[]> AdjacentEdges =
         new Dictionary<Face, (Face, Func<int, (int, int)>)[]>
@@ -67,11 +68,20 @@ public class CubeService : ICubeService
 
     public Result<CubeStateDto> GetState()
     {
-        return Result<CubeStateDto>.Success(new CubeStateDto());
+        var cubeState = new CubeStateDto([
+            PrintFace(_cube.GetFaceState(Face.Front)),
+            PrintFace(_cube.GetFaceState(Face.Back)),
+            PrintFace(_cube.GetFaceState(Face.Up)),
+            PrintFace(_cube.GetFaceState(Face.Down)),
+            PrintFace(_cube.GetFaceState(Face.Left)),
+            PrintFace(_cube.GetFaceState(Face.Right))]);
+
+        return Result<CubeStateDto>.Success(cubeState);
     }
 
     public Result Reset()
     {
+        _cube.ResetCube();
         return Result.Success();
     }
 
@@ -134,5 +144,24 @@ public class CubeService : ICubeService
                 _cube[mappings[0].face, dstX, dstY] = temp[j];
             }
         }
+    }
+    
+    private static string PrintFace(Color[,] face)
+    {
+        var rows = face.GetLength(0);
+        var cols = face.GetLength(1);
+        var output = new StringBuilder();
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                output.Append(face[i, j].ToString()[0]); // First char of each color
+                output.Append(' ');
+            }
+            output.AppendLine();
+        }
+
+        return output.ToString();
     }
 }

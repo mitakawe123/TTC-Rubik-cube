@@ -1,3 +1,3 @@
 namespace RubiksCube.Domain.DTOs;
 
-public record CubeStateDto();
+public record CubeStateDto(string[] Faces);
