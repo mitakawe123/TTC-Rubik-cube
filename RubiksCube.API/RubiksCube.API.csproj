@@ -17,4 +17,8 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\RubiksCube.Application\RubiksCube.Application.csproj" />
+    </ItemGroup>
+
 </Project>
