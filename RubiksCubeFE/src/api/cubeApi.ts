@@ -18,3 +18,8 @@ export async function resetCube() {
 	const res = await fetch(`${BASE_URL}/reset`, { method: "PATCH" });
 	return res.ok;
 }
+
+export async function scrambleCube() {
+	const res = await fetch(`${BASE_URL}/scramble`, { method: "PATCH" });
+	return res.ok;
+}

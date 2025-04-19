@@ -6,26 +6,31 @@ interface CubeProps {
 }
 
 const Cube: FC<CubeProps> = ({ faces }) => {
-    if (faces.length !== 6)
-        return null;
+	if (faces.length !== 6) return null;
 
 	return (
-		<div className="flex flex-col items-center gap-2">
-			{/* UP */}
-			<div className="h-24 flex justify-center">
+		<div className="grid grid-cols-4 grid-rows-3 gap-2 place-items-center">
+			{/* UP face (top center) */}
+			<div className="col-start-2 row-start-1">
 				<Face face={faces[2]} />
 			</div>
 
-			{/* LEFT, FRONT, RIGHT, BACK */}
-			<div className="flex gap-2">
+			{/* LEFT, FRONT, RIGHT, BACK (middle row) */}
+			<div className="col-start-1 row-start-2">
 				<Face face={faces[4]} />
+			</div>
+			<div className="col-start-2 row-start-2">
 				<Face face={faces[0]} />
+			</div>
+			<div className="col-start-3 row-start-2">
 				<Face face={faces[5]} />
+			</div>
+			<div className="col-start-4 row-start-2">
 				<Face face={faces[1]} />
 			</div>
 
-			{/* DOWN */}
-			<div className="h-24 flex justify-center">
+			{/* DOWN face (bottom center) */}
+			<div className="col-start-2 row-start-3">
 				<Face face={faces[3]} />
 			</div>
 		</div>

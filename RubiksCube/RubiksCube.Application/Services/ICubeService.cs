@@ -10,4 +10,6 @@ public interface ICubeService
     Result<CubeStateDto> GetState();
 
     Result Reset();
+
+    Result Scramble(int moves = 20);
 }

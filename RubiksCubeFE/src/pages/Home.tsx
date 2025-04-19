@@ -1,8 +1,23 @@
 import { useEffect, useState } from "react";
-import { getCubeState, rotateCube, resetCube } from "../api/cubeApi";
+import {
+	getCubeState,
+	rotateCube,
+	resetCube,
+	scrambleCube,
+} from "../api/cubeApi";
 import Cube from "../components/Cube";
 
 export default function Home() {
+	const ClockwiseFaces = ["Front", "Back", "Up", "Down", "Left", "Right"];
+	const CounterClockwiseFaces = [
+		"Front'",
+		"Back'",
+		"Up'",
+		"Down'",
+		"Left'",
+		"Right'",
+	];
+
 	const [faces, setFaces] = useState<string[][][]>([]);
 
 	const fetchState = async () => {
@@ -27,6 +42,11 @@ export default function Home() {
 		fetchState();
 	};
 
+	const handleScramble = async () => {
+		await scrambleCube();
+		fetchState();
+	};
+
 	useEffect(() => {
 		fetchState();
 	}, []);
@@ -35,7 +55,7 @@ export default function Home() {
 		<div className="p-4 flex flex-col items-center gap-4">
 			<Cube faces={faces} />
 			<div className="flex gap-2 flex-wrap justify-center">
-				{["Front", "Back", "Up", "Down", "Left", "Right"].map((name, idx) => (
+				{ClockwiseFaces.map((name, idx) => (
 					<button
 						key={name}
 						onClick={() => handleRotate(idx, true)}
@@ -44,11 +64,30 @@ export default function Home() {
 						{name}
 					</button>
 				))}
+			</div>
+			<div className="flex gap-2 flex-wrap justify-center">
+				{CounterClockwiseFaces.map((name, idx) => (
+					<button
+						key={name}
+						onClick={() => handleRotate(idx, false)}
+						className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+					>
+						{name}
+					</button>
+				))}
+			</div>
+			<div className="flex gap-2 flex-wrap justify-center">
 				<button
 					onClick={handleReset}
 					className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
 				>
 					Reset
+				</button>
+				<button
+					onClick={handleScramble}
+					className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+				>
+					Scramble
 				</button>
 			</div>
 		</div>

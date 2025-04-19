@@ -85,6 +85,23 @@ public class CubeService(Cube cube) : ICubeService
         return Result.Success();
     }
 
+    public Result Scramble(int moves = 20)
+    {
+        var random = new Random();
+        var faces = Enum.GetValues<Face>();
+        var directions = new[] { true, false }; // true: clockwise, false: counter
+
+        for (int i = 0; i < moves; i++)
+        {
+            var face = faces[random.Next(faces.Length)];
+            var clockwise = directions[random.Next(2)];
+            RotateFaceMatrix(face, clockwise);
+            RotateEdges(face, clockwise);
+        }
+
+        return Result.Success();
+    }
+
     private void RotateFaceMatrix(Face face, bool clockwise)
     {
         var size = _cube.Size;
@@ -93,8 +110,12 @@ public class CubeService(Cube cube) : ICubeService
 
         for (var i = 0; i < size; i++)
         for (var j = 0; j < size; j++)
-            rotated[i, j] = clockwise ? faceMatrix[size - j - 1, i] : faceMatrix[j, size - i - 1];
-
+        {
+            rotated[i, j] = clockwise
+                ? faceMatrix[size - j - 1, i]
+                : faceMatrix[j, size - i - 1];
+        }
+        
         for (var i = 0; i < size; i++)
         for (var j = 0; j < size; j++)
             _cube[face, i, j] = rotated[i, j];
@@ -106,14 +127,16 @@ public class CubeService(Cube cube) : ICubeService
         var size = _cube.Size;
         var temp = new Color[size];
 
-        for (int i = 0; i < size; i++)
-        {
-            var (x, y) = mappings[0].getPos(i);
-            temp[i] = _cube[mappings[0].face, x, y];
-        }
-
         if (clockwise)
         {
+            // Store first edge
+            for (int i = 0; i < size; i++)
+            {
+                var (x, y) = mappings[0].getPos(i);
+                temp[i] = _cube[mappings[0].face, x, y];
+            }
+
+            // Shift each edge from next to current
             for (int i = 0; i < mappings.Length - 1; i++)
             for (int j = 0; j < size; j++)
             {
@@ -122,14 +145,23 @@ public class CubeService(Cube cube) : ICubeService
                 _cube[mappings[i].face, dstX, dstY] = _cube[mappings[i + 1].face, srcX, srcY];
             }
 
+            // Move temp (original 0th edge) to the last
             for (int j = 0; j < size; j++)
             {
                 var (dstX, dstY) = mappings[^1].getPos(j);
                 _cube[mappings[^1].face, dstX, dstY] = temp[j];
             }
         }
-        else
+        else // counterclockwise
         {
+            // Store last edge into temp
+            for (int i = 0; i < size; i++)
+            {
+                var (x, y) = mappings[^1].getPos(i);
+                temp[i] = _cube[mappings[^1].face, x, y];
+            }
+
+            // Shift each edge from previous to current
             for (int i = mappings.Length - 1; i > 0; i--)
             for (int j = 0; j < size; j++)
             {
@@ -138,6 +170,7 @@ public class CubeService(Cube cube) : ICubeService
                 _cube[mappings[i].face, dstX, dstY] = _cube[mappings[i - 1].face, srcX, srcY];
             }
 
+            // Move temp (original last edge) to the first
             for (int j = 0; j < size; j++)
             {
                 var (dstX, dstY) = mappings[0].getPos(j);

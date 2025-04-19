@@ -36,5 +36,13 @@ public class CubeController(ICubeService cubeService) : ControllerBase
             ? NoContent()
             : BadRequest(result.Error);
     }
-
+    
+    [HttpPatch("scramble")]
+    public IActionResult TryOrder()
+    {
+        var result = _cubeService.Scramble();
+        return result.IsSuccess
+            ? NoContent()
+            : BadRequest(result.Error);
+    }
 }
