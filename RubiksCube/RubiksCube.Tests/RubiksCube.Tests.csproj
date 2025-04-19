@@ -18,4 +18,9 @@
         <Using Include="Xunit"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\RubiksCube.Application\RubiksCube.Application.csproj" />
+      <ProjectReference Include="..\RubiksCube.Domain\RubiksCube.Domain.csproj" />
+    </ItemGroup>
+
 </Project>
